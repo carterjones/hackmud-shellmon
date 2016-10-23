@@ -52,7 +52,7 @@ func main() {
 
 				// TODO: parse the image with https://github.com/kdar/goquirc
 
-				// TODO: put the result into the keyboard
+				// TODO: put the result into the clipboard
 				result := "decoded result"
 				log.Println(result)
 				err := clipboard.WriteAll(result)
