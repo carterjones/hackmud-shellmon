@@ -135,15 +135,46 @@ func translateQrCodeArrayToBlackWhiteChars(qrs <-chan []string) <-chan [][]strin
 				// Prepare a byte array for this row.
 				rowByteArray := make([]string, len(row))
 
-				// Iterate over the cells of the row and set them either B, W, or ?
+				// Iterate over the cells of the row and set them either "B" or "W"
 				for i := 0; i < len(row); i++ {
 					cell := row[i]
 					if cell == bChar {
 						rowByteArray[i] = "B"
 					} else if cell == wChar {
 						rowByteArray[i] = "W"
-					} else {
-						rowByteArray[i] = "?"
+					}
+				}
+
+				// Add the new row to the new QR array.
+				qrByteArray = append(qrByteArray, rowByteArray)
+			}
+
+			// Send the new array to the output channel.
+			out <- qrByteArray
+		}
+	}()
+
+	return out
+}
+
+func translateQrCodeArrayToBlackWhiteSymbols(qrs <-chan [][]string) <-chan [][]string {
+	out := make(chan [][]string)
+
+	go func() {
+		for qr := range qrs {
+			// Prepare a 2D byte array.
+			qrByteArray := make([][]string, 0)
+
+			for _, row := range qr {
+				// Prepare a byte array for this row.
+				rowByteArray := make([]string, len(row))
+
+				// Iterate over the cells of the row and set them either "█" or " "
+				for i, cell := range row {
+					if cell == "B" {
+						rowByteArray[i] = "█"
+					} else if cell == "W" {
+						rowByteArray[i] = " "
 					}
 				}
 
@@ -168,7 +199,10 @@ func main() {
 	// Translate the characters of the array to "B" and "W".
 	bwChars := translateQrCodeArrayToBlackWhiteChars(qrCodes)
 
-	for qca := range bwChars {
+	// Translate the characters of the array to "█" and " ".
+	bwSymbols := translateQrCodeArrayToBlackWhiteSymbols(bwChars)
+
+	for qca := range bwSymbols {
 		for _, row := range qca {
 			rowStr := ""
 			for _, cell := range row {
