@@ -81,7 +81,7 @@ func waitForFileChange(filePath string) error {
 	return nil
 }
 
-func getQrCodeArrays(path string) <-chan []string {
+func generateQrCodeArrays(path string) <-chan []string {
 	// Make an output channel to send the QR codes to.
 	out := make(chan []string)
 
@@ -117,14 +117,65 @@ func getQrCodeArrays(path string) <-chan []string {
 	return out
 }
 
+func translateQrCodeArrayToBlackWhiteChars(qrs <-chan []string) <-chan [][]string {
+	out := make(chan [][]string)
+
+	go func() {
+		for qr := range qrs {
+			// Prepare a 2D byte array.
+			qrByteArray := make([][]string, 0)
+
+			// Get the top left character. This will be black.
+			bChar := qr[0][0]
+
+			// Get the character at 1,1. This will be white.
+			wChar := qr[1][1]
+
+			for _, row := range qr {
+				// Prepare a byte array for this row.
+				rowByteArray := make([]string, len(row))
+
+				// Iterate over the cells of the row and set them either B, W, or ?
+				for i := 0; i < len(row); i++ {
+					cell := row[i]
+					if cell == bChar {
+						rowByteArray[i] = "B"
+					} else if cell == wChar {
+						rowByteArray[i] = "W"
+					} else {
+						rowByteArray[i] = "?"
+					}
+				}
+
+				// Add the new row to the new QR array.
+				qrByteArray = append(qrByteArray, rowByteArray)
+			}
+
+			// Send the new array to the output channel.
+			out <- qrByteArray
+		}
+	}()
+
+	return out
+}
+
 func main() {
 	path := flag.String("path", "shell.txt", "path to the shell.txt file")
 
 	// Start the pipeline by generating a channel of QR code arrays.
-	qrCodes := getQrCodeArrays(*path)
+	qrCodes := generateQrCodeArrays(*path)
 
-	for qr := range qrCodes {
-		log.Println(strings.Join(qr, "\n"))
+	// Translate the characters of the array to "B" and "W".
+	bwChars := translateQrCodeArrayToBlackWhiteChars(qrCodes)
+
+	for qca := range bwChars {
+		for _, row := range qca {
+			rowStr := ""
+			for _, cell := range row {
+				rowStr = rowStr + cell
+			}
+			log.Println(rowStr)
+		}
 	}
 
 	// TODO: take the qr code and translate the array to an image.Image with the 1's being black and the 0's being white
