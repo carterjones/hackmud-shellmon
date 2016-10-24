@@ -7,18 +7,6 @@
 			"path": "github.com/atotto/clipboard",
 			"revision": "bb272b845f1112e10117e3e45ce39f690c0001ad",
 			"revisionTime": "2016-02-19T03:44:21Z"
-		},
-		{
-			"checksumSHA1": "nmc2qcdbg17Ny8tHeEDQuphV6jA=",
-			"path": "github.com/fsnotify/fsnotify",
-			"revision": "bd2828f9f176e52d7222e565abb2d338d3f3c103",
-			"revisionTime": "2016-10-13T01:22:19Z"
-		},
-		{
-			"checksumSHA1": "aVgPDgwY3/t4J/JOw9H3FVMHqh0=",
-			"path": "golang.org/x/sys/unix",
-			"revision": "c200b10b5d5e122be351b67af224adc6128af5bf",
-			"revisionTime": "2016-10-22T18:22:21Z"
 		}
 	],
 	"rootPath": "github.com/carterjones/hackmud-shellmon"
