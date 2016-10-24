@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"image"
 	"io/ioutil"
 	"log"
 	"os"
@@ -190,6 +191,41 @@ func translateQrCodeArrayToBlackWhiteSymbols(qrs <-chan [][]string) <-chan [][]s
 	return out
 }
 
+func translateBWCharArrayToImages(bwChars <-chan [][]string) <-chan image.Image {
+	out := make(chan [][]string)
+
+	go func() {
+		for bwc := range bwChars {
+			// Prepare an image.
+			image.Image
+			// Prepare a 2D byte array.
+			qrByteArray := make([][]string, 0)
+
+			for _, row := range qr {
+				// Prepare a byte array for this row.
+				rowByteArray := make([]string, len(row))
+
+				// Iterate over the cells of the row and set them either "█" or " "
+				for i, cell := range row {
+					if cell == "B" {
+						rowByteArray[i] = "█"
+					} else if cell == "W" {
+						rowByteArray[i] = " "
+					}
+				}
+
+				// Add the new row to the new QR array.
+				qrByteArray = append(qrByteArray, rowByteArray)
+			}
+
+			// Send the new array to the output channel.
+			out <- qrByteArray
+		}
+	}()
+
+	return out
+}
+
 func main() {
 	path := flag.String("path", "shell.txt", "path to the shell.txt file")
 
@@ -200,7 +236,10 @@ func main() {
 	bwChars := translateQrCodeArrayToBlackWhiteChars(qrCodes)
 
 	// Translate the characters of the array to "█" and " ".
-	bwSymbols := translateQrCodeArrayToBlackWhiteSymbols(bwChars)
+	//bwSymbols := translateQrCodeArrayToBlackWhiteSymbols(bwChars)
+
+	// Translate the 2D string array to an image.Image object.
+	images := translateBWCharArrayToImages(bwChars)
 
 	for qca := range bwSymbols {
 		for _, row := range qca {
