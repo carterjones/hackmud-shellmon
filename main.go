@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"image"
+	"image/color"
+	"image/png"
 	"io/ioutil"
 	"log"
 	"os"
@@ -192,34 +195,27 @@ func translateQrCodeArrayToBlackWhiteSymbols(qrs <-chan [][]string) <-chan [][]s
 }
 
 func translateBWCharArrayToImages(bwChars <-chan [][]string) <-chan image.Image {
-	out := make(chan [][]string)
+	out := make(chan image.Image)
 
 	go func() {
 		for bwc := range bwChars {
+			dimension := len(bwChars)
+
 			// Prepare an image.
-			image.Image
-			// Prepare a 2D byte array.
-			qrByteArray := make([][]string, 0)
+			img := image.NewRGBA(image.Rect(0, 0, dimension, dimension))
 
-			for _, row := range qr {
-				// Prepare a byte array for this row.
-				rowByteArray := make([]string, len(row))
-
-				// Iterate over the cells of the row and set them either "█" or " "
-				for i, cell := range row {
+			for r, row := range bwc {
+				for c, cell := range row {
 					if cell == "B" {
-						rowByteArray[i] = "█"
+						img.Set(c, r, color.Black)
 					} else if cell == "W" {
-						rowByteArray[i] = " "
+						img.Set(c, r, color.White)
 					}
 				}
-
-				// Add the new row to the new QR array.
-				qrByteArray = append(qrByteArray, rowByteArray)
 			}
 
-			// Send the new array to the output channel.
-			out <- qrByteArray
+			// Send the image to the output channel
+			out <- img.SubImage(image.Rect(0, 0, dimension, dimension))
 		}
 	}()
 
@@ -239,16 +235,26 @@ func main() {
 	//bwSymbols := translateQrCodeArrayToBlackWhiteSymbols(bwChars)
 
 	// Translate the 2D string array to an image.Image object.
+	// The 1's are black and the 0's are white.
 	images := translateBWCharArrayToImages(bwChars)
 
-	for qca := range bwSymbols {
-		for _, row := range qca {
-			rowStr := ""
-			for _, cell := range row {
-				rowStr = rowStr + cell
-			}
-			log.Println(rowStr)
+	for img := range images {
+		f, err := os.Create("qr.png")
+		if err != nil {
+			log.Fatal(err)
 		}
+		w := bufio.NewWriter(f)
+		png.Encode(w, img)
+		w.Flush()
+		f.Close()
+		log.Println(img)
+		//datas, err := qrcode.Decode(img)
+		//if err != nil {
+		//	log.Fatal(err)
+		//} else {
+		//	log.Println(datas)
+		//}
+		//d.Destroy()
 	}
 
 	// TODO: take the qr code and translate the array to an image.Image with the 1's being black and the 0's being white
